@@ -1,0 +1,205 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_PRODUCTS 5
+#define NAME_LEN 48
+
+typedef struct {
+    int id;                 // 상품 ID (일련번호)
+    char name[NAME_LEN+1];  // 상품명
+    int price;              // 판매가격 (원)
+    int received;           // 입고량(누적)
+    int sold;               // 판매량(누적)
+    int in_use;             // 슬롯 사용 여부 (0/1)
+} Product;
+
+static void clear_stdin(void) {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {}
+}
+
+static int get_int(const char *prompt, int allow_negative) {
+    int x;
+    while (1) {
+        printf("%s", prompt);
+        int r = scanf("%d", &x);
+        if (r == 1) {
+            clear_stdin();
+            if (!allow_negative && x < 0) {
+                printf("음수는 허용되지 않습니다. 다시 입력하세요.\n");
+                continue;
+            }
+            return x;
+        } else {
+            printf("정수를 입력하세요.\n");
+            clear_stdin();
+        }
+    }
+}
+
+static void get_line(const char *prompt, char *buf, size_t n) {
+    while (1) {
+        printf("%s", prompt);
+        if (fgets(buf, (int)n, stdin) == NULL) {
+            buf[0] = '\0';
+            return;
+        }
+        
+        size_t len = strlen(buf);
+        if (len && buf[len-1] == '\n') buf[len-1] = '\0';
+        
+        int allspace = 1;
+        for (size_t i = 0; buf[i]; ++i) {
+            if (!isspace((unsigned char)buf[i])) { allspace = 0; break; }
+        }
+        if (!allspace) return;
+        printf("빈 값은 허용되지 않습니다. 다시 입력하세요.\n");
+    }
+}
+
+
+static int find_index_by_id(Product arr[], int id) {
+    for (int i = 0; i < MAX_PRODUCTS; ++i) {
+        if (arr[i].in_use && arr[i].id == id) return i;
+    }
+    return -1;
+}
+
+static int find_free_slot(Product arr[]) {
+    for (int i = 0; i < MAX_PRODUCTS; ++i) {
+        if (!arr[i].in_use) return i;
+    }
+    return -1;
+}
+
+static int current_stock(const Product *p) {
+    return p->received - p->sold;
+}
+
+static long long total_revenue(const Product *p) {
+    return (long long)p->price * (long long)p->sold;
+}
+
+static void print_header_row(void) {
+    printf("--------------------------------------------------------------------------------------\n");
+    printf("%-8s %-16s %10s %10s %10s %10s %14s\n",
+           "ID", "상품명", "가격", "입고량", "판매량", "재고", "총판매금액");
+    printf("--------------------------------------------------------------------------------------\n");
+}
+
+static void print_product(const Product *p) {
+    printf("%-8d %-16s %10d %10d %10d %10d %14lld\n",
+           p->id, p->name, p->price, p->received, p->sold,
+           current_stock(p), total_revenue(p));
+}
+
+static void menu_receive(Product arr[]) {
+    printf("\n[입고 메뉴]\n");
+    int id = get_int("상품ID 입력: ", 0);
+
+    int idx = find_index_by_id(arr, id);
+    char name[NAME_LEN+1];
+    get_line("상품명 입력: ", name, sizeof(name));
+    int qty = get_int("입고수량 입력: ", 0);
+    int price = get_int("판매가격 입력(원): ", 0);
+
+    if (idx >= 0) {
+        printf("기존 상품(ID %d) 업데이트 진행\n", id);
+        strncpy(arr[idx].name, name, NAME_LEN);
+        arr[idx].name[NAME_LEN] = '\0';
+        arr[idx].price = price;
+        arr[idx].received += qty;
+    } else {
+        int free_idx = find_free_slot(arr);
+        if (free_idx < 0) {
+            printf("상품 등록 한도(%d개)에 도달했습니다. 신규 등록 불가.\n", MAX_PRODUCTS);
+            return;
+        }
+        arr[free_idx].in_use = 1;
+        arr[free_idx].id = id;
+        strncpy(arr[free_idx].name, name, NAME_LEN);
+        arr[free_idx].name[NAME_LEN] = '\0';
+        arr[free_idx].price = price;
+        arr[free_idx].received = qty;
+        arr[free_idx].sold = 0;
+        printf("신규 상품(ID %d) 등록 완료\n", id);
+    }
+}
+
+static void menu_sell(Product arr[]) {
+    printf("\n[판매 메뉴]\n");
+    int id = get_int("상품ID 입력: ", 0);
+    int idx = find_index_by_id(arr, id);
+    if (idx < 0) {
+        printf("오류: 해당 ID의 상품이 없습니다.\n");
+        return;
+    }
+    int qty = get_int("판매수량 입력: ", 0);
+    int stock = current_stock(&arr[idx]);
+    if (qty > stock) {
+        printf("오류: 재고부족 (현재 재고 %d개)\n", stock);
+        return;
+    }
+    arr[idx].sold += qty;
+    printf("판매 완료: %s %d개, 총액 %d원 증가\n",
+           arr[idx].name, qty, arr[idx].price * qty);
+}
+
+static void menu_single_status(Product arr[]) {
+    printf("\n[개별현황]\n");
+    int id = get_int("상품ID 입력: ", 0);
+    int idx = find_index_by_id(arr, id);
+    if (idx < 0) {
+        printf("오류: 해당 ID의 상품이 없습니다.\n");
+        return;
+    }
+    print_header_row();
+    print_product(&arr[idx]);
+    printf("--------------------------------------------------------------------------------------\n");
+}
+
+static void menu_all_status(Product arr[]) {
+    printf("\n[전체현황]\n");
+    print_header_row();
+    long long grand_revenue = 0;
+    int any = 0;
+    for (int i = 0; i < MAX_PRODUCTS; ++i) {
+        if (!arr[i].in_use) continue;
+        any = 1;
+        print_product(&arr[i]);
+        grand_revenue += total_revenue(&arr[i]);
+    }
+    if (!any) {
+        printf("(등록된 상품이 없습니다)\n");
+    }
+    printf("--------------------------------------------------------------------------------------\n");
+    printf("총 판매금액 합계: %lld 원\n", grand_revenue);
+}
+
+int main(void) {
+    Product products[MAX_PRODUCTS] = {0};
+
+    while (1) {
+        printf("\n원하는 메뉴를 선택하세요. (1. 입고, 2. 판매, 3. 개별현황, 4. 전체현황, 5. 종료)\n> ");
+        int sel;
+        if (scanf("%d", &sel) != 1) {
+            clear_stdin();
+            printf("메뉴 번호를 입력하세요.\n");
+            continue;
+        }
+        clear_stdin();
+
+        switch (sel) {
+            case 1: menu_receive(products); break;
+            case 2: menu_sell(products); break;
+            case 3: menu_single_status(products); break;
+            case 4: menu_all_status(products); break;
+            case 5:
+                printf("프로그램을 종료합니다.\n");
+                return 0;
+            default:
+                printf("1~5 사이의 번호를 입력하세요.\n");
+        }
+    }
+}
