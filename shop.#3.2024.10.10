@@ -1,0 +1,102 @@
+#include <stdio.h>
+
+int main(void) {
+    char name[6][50];
+    int price[6] = {0};
+    int in[6] = {0};
+    int sold[6] = {0};
+    int menu;
+    int i;
+    long long amount[6] = {0};
+
+    for (i = 1; i <= 5; i++)
+        name[i][0] = '\0';
+
+    while (1) {
+        printf("\n[쇼핑몰 관리 프로그램]\n");
+        printf("원하는 메뉴를 선택하세요.(1. 입고, 2. 판매, 3. 개별현황, 4. 전체현황, 5. 종료)\n> ");
+        scanf("%d", &menu);
+
+        if (menu == 5)
+            break;
+
+        if (menu == 1) {          /* 입고 메뉴 */
+            int id, qty, p;
+
+            printf("상품ID : ");
+            scanf("%d", &id);
+
+            if (id < 1 || id > 5) {
+                printf("상품 개수를 초과했습니다.\n");
+                continue;
+            }
+
+            printf("상품명 : ");
+            scanf("%s", name[id]);
+
+            printf("입고량 : ");
+            scanf("%d", &qty);
+
+            printf("판매가격 : ");
+            scanf("%d", &p);
+
+            in[id] += qty;
+            price[id] = p;
+        } else if (menu == 2) {   /* 판매 메뉴 */
+            int id, qty;
+
+            printf("상품ID : ");
+            scanf("%d", &id);
+
+            if (id < 1 || id > 5 || name[id][0] == '\0') {
+                printf("존재하지 않는 상품ID 입니다.\n");
+                continue;
+            }
+
+            printf("판매량 : ");
+            scanf("%d", &qty);
+
+            sold[id] += qty;
+            amount[id] += (long long)qty * price[id];
+        } else if (menu == 3) {   /* 개별현황 메뉴 */
+            int id;
+
+            printf("상품ID : ");
+            scanf("%d", &id);
+
+            if (id < 1 || id > 5 || name[id][0] == '\0') {
+                printf("존재하지 않는 상품ID 입니다.\n");
+                continue;
+            }
+
+            printf("\n[개별 상품 정보]\n");
+            printf("상품ID       : %d\n", id);
+            printf("상품명       : %s\n", name[id]);
+            printf("상품가격     : %d\n", price[id]);
+            printf("총 입고량    : %d\n", in[id]);
+            printf("총 판매량    : %d\n", sold[id]);
+            printf("총 판매금액  : %lld\n", amount[id]);
+            printf("현재 재고    : %d\n", in[id] - sold[id]);
+        } else if (menu == 4) {   /* 전체현황 메뉴 */
+            long long totalAmount = 0;
+
+            printf("\n[전체 상품 정보]\n");
+            printf("ID  이름        가격   입고량  판매량  재고   총판매금액\n");
+
+            for (i = 1; i <= 5; i++) {
+                if (name[i][0] == '\0')
+                    continue;
+
+                printf("%-3d %-10s %-6d %-6d %-6d %-6d %-10lld\n",
+                       i, name[i], price[i], in[i], sold[i],
+                       in[i] - sold[i], amount[i]);
+
+                totalAmount += amount[i];
+            }
+
+            printf("총 판매금액 합계 : %lld\n", totalAmount);
+        }
+    }
+
+    return 0;
+}
