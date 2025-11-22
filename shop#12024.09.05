@@ -1,0 +1,30 @@
+#include <stdio.h>
+
+int main(void) {
+    int n;
+    int in[101], sold[101], remain[101];
+    int id;
+    int i;
+
+    scanf("%d", &n);            
+
+    for (i = 1; i <= n; i++)   
+        scanf("%d", &in[i]);
+
+    for (i = 1; i <= n; i++)    
+        scanf("%d", &sold[i]);
+
+    scanf("%d", &id);           
+
+    for (i = 1; i <= n; i++)    
+        remain[i] = in[i] - sold[i];
+
+    printf("%d\n", remain[id]); 
+
+    for (i = 1; i <= n; i++) { 
+        printf("%d", remain[i]);
+        if (i < n) printf(" ");
+    }
+
+    return 0;
+}
