@@ -1,0 +1,145 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX 5
+
+int main(void) {
+    char name[MAX+1][50];
+    int price[MAX+1] = {0};
+    int in[MAX+1] = {0};
+    int sold[MAX+1] = {0};
+    long long amount[MAX+1] = {0};
+    int menu, i;
+
+    for (i = 1; i <= MAX; i++)
+        name[i][0] = '\0';
+
+    while (1) {
+        printf("\n[쇼핑몰 관리 프로그램]\n");
+        printf("메뉴 선택 (1. 입고, 2. 판매, 3. 개별현황, 4. 전체현황, 5. 상품정보저장, 6. 상품정보가져오기, 7. 종료)\n> ");
+        scanf("%d", &menu);
+
+        if (menu == 7) break;
+
+        /* ------------------------- 입고 메뉴 ------------------------- */
+        if (menu == 1) {
+            int id, qty, p;
+
+            printf("상품ID : ");
+            scanf("%d", &id);
+
+            if (id < 1 || id > MAX) {
+                printf("상품 개수 초과.\n");
+                continue;
+            }
+
+            printf("상품명 : ");
+            scanf("%s", name[id]);
+
+            printf("입고량 : ");
+            scanf("%d", &qty);
+
+            printf("판매가격 : ");
+            scanf("%d", &p);
+
+            in[id] += qty;
+            price[id] = p;
+        }
+
+        /* ------------------------- 판매 메뉴 ------------------------- */
+        else if (menu == 2) {
+            int id, qty;
+
+            printf("상품ID : ");
+            scanf("%d", &id);
+
+            if (id < 1 || id > MAX || name[id][0] == '\0') {
+                printf("존재하지 않는 상품.\n");
+                continue;
+            }
+
+            printf("판매수량 : ");
+            scanf("%d", &qty);
+
+            sold[id] += qty;
+            amount[id] += (long long)qty * price[id];
+        }
+
+        /* ------------------------- 개별현황 메뉴 ------------------------- */
+        else if (menu == 3) {
+            int id;
+
+            printf("상품ID : ");
+            scanf("%d", &id);
+
+            if (id < 1 || id > MAX || name[id][0] == '\0') {
+                printf("존재하지 않는 상품.\n");
+                continue;
+            }
+
+            printf("\n[개별 상품 정보]\n");
+            printf("상품ID       : %d\n", id);
+            printf("상품명       : %s\n", name[id]);
+            printf("상품가격     : %d\n", price[id]);
+            printf("총 입고량    : %d\n", in[id]);
+            printf("총 판매량    : %d\n", sold[id]);
+            printf("총 판매금액  : %lld\n", amount[id]);
+            printf("현재 재고    : %d\n", in[id] - sold[id]);
+        }
+
+        /* ------------------------- 전체현황 메뉴 ------------------------- */
+        else if (menu == 4) {
+            long long total = 0;
+
+            printf("\n[전체 상품 정보]\n");
+            printf("ID   이름         가격    입고   판매   재고   총판매금액\n");
+
+            for (i = 1; i <= MAX; i++) {
+                if (name[i][0] == '\0')
+                    continue;
+
+                printf("%-4d %-10s %-7d %-6d %-6d %-6d %-10lld\n",
+                       i, name[i], price[i], in[i], sold[i],
+                       in[i] - sold[i], amount[i]);
+
+                total += amount[i];
+            }
+
+            printf("총 판매금액 합계 : %lld\n", total);
+        }
+
+        /* ------------------------- 상품정보 저장 ------------------------- */
+        else if (menu == 5) {
+            FILE *fp = fopen("shopdata.txt", "w");
+
+            for (i = 1; i <= MAX; i++) {
+                fprintf(fp, "%s %d %d %d %lld\n",
+                        name[i], price[i], in[i], sold[i], amount[i]);
+            }
+
+            fclose(fp);
+            printf("상품정보가 파일에 저장되었습니다.\n");
+        }
+
+        /* ------------------------- 상품정보 불러오기 ------------------------- */
+        else if (menu == 6) {
+            FILE *fp = fopen("shopdata.txt", "r");
+
+            if (!fp) {
+                printf("저장된 파일이 없습니다.\n");
+                continue;
+            }
+
+            for (i = 1; i <= MAX; i++) {
+                fscanf(fp, "%s %d %d %d %lld",
+                       name[i], &price[i], &in[i], &sold[i], &amount[i]);
+            }
+
+            fclose(fp);
+            printf("상품정보를 파일에서 불러왔습니다.\n");
+        }
+
+    }
+
+    return 0;
+}
