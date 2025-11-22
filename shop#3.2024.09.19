@@ -1,0 +1,67 @@
+#include <stdio.h>
+
+int main(void) {
+    int in[6] = {0}, sold[6] = {0}, remain[6] = {0};
+    int menu, sub, id, qty;
+    int i;
+
+    for (i = 1; i <= 5; i++)
+        remain[i] = 0;
+
+    while (1) {
+        printf("\n[쇼핑몰 관리 프로그램]\n");
+        printf("원하는 메뉴를 선택하세요.(1. 입고, 2. 판매, 3. 상품현황, 4. 종료)\n> ");
+        scanf("%d", &menu);
+
+        if (menu == 4) break;
+
+        if (menu == 1) {
+            printf("(출력)입고수량 입력 : 전체 상품 입고수량 입력 1, 개별 상품 입력 2를 선택\n> ");
+            scanf("%d", &sub);
+
+            if (sub == 1) {
+                for (i = 1; i <= 5; i++) {
+                    scanf("%d", &qty);
+                    in[i] += qty;
+                    remain[i] = in[i] - sold[i];
+                }
+            } else if (sub == 2) {
+                printf("(입력1) 상품ID : ");
+                scanf("%d", &id);
+                printf("(입력2) 입고수량 : ");
+                scanf("%d", &qty);
+                in[id] += qty;
+                remain[id] = in[id] - sold[id];
+            }
+        }
+
+        if (menu == 2) {
+            printf("(출력)판매수량 입력 : 전체 상품 판매수량 입력 1, 개별 상품 입력 2 선택\n> ");
+            scanf("%d", &sub);
+
+            if (sub == 1) {
+                for (i = 1; i <= 5; i++) {
+                    scanf("%d", &qty);
+                    sold[i] += qty;
+                    remain[i] = in[i] - sold[i];
+                }
+            } else if (sub == 2) {
+                printf("(입력1) 상품ID : ");
+                scanf("%d", &id);
+                printf("(입력2) 판매수량 : ");
+                scanf("%d", &qty);
+                sold[id] += qty;
+                remain[id] = in[id] - sold[id];
+            }
+        }
+
+        if (menu == 3) {
+            printf("상품현황 출력\n");
+            for (i = 1; i <= 5; i++) {
+                printf("상품 %d | 입고: %d | 판매: %d | 재고: %d\n", i, in[i], sold[i], remain[i]);
+            }
+        }
+    }
+
+    return 0;
+}
